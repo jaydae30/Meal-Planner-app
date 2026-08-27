@@ -1,0 +1,31 @@
+# Build outputs
+build/
+.gradle/
+.kotlin/
+
+# Local machine config (SDK path etc, differs per developer)
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Room generated schema history (regenerable)
+shared/schemas/
+
+# Kotlin/Native
+.konan/
+
+# Scratch/testing artifacts from development sessions
+.screenshots/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Claude Code session-local state
+.claude/
