@@ -22,11 +22,22 @@ object NutritionCalculator {
             var carbs = 0.0
             var fat = 0.0
             for (detail in meals) {
-                val servings = detail.plannedMeal.servings
-                calories += servings * detail.recipe.caloriesPerServing
-                protein += servings * detail.recipe.proteinGramsPerServing
-                carbs += servings * detail.recipe.carbsGramsPerServing
-                fat += servings * detail.recipe.fatGramsPerServing
+                // Iterate through all recipes in this meal
+                for (recipeDetail in detail.recipes) {
+                    val servings = recipeDetail.servings
+                    calories += servings * recipeDetail.recipe.caloriesPerServing
+                    protein += servings * recipeDetail.recipe.proteinGramsPerServing
+                    carbs += servings * recipeDetail.recipe.carbsGramsPerServing
+                    fat += servings * recipeDetail.recipe.fatGramsPerServing
+                }
+
+                // Also add nutrition from standalone meal ingredients
+                for (mealIngredient in detail.mealIngredients) {
+                    calories += mealIngredient.quantity * mealIngredient.caloriesPerUnit
+                    protein += mealIngredient.quantity * mealIngredient.proteinGramsPerUnit
+                    carbs += mealIngredient.quantity * mealIngredient.carbsGramsPerUnit
+                    fat += mealIngredient.quantity * mealIngredient.fatGramsPerUnit
+                }
             }
             DayNutrition(
                 date = date,

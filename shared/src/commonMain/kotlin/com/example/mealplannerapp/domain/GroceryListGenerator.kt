@@ -20,30 +20,54 @@ object GroceryListGenerator {
         val accumulator = LinkedHashMap<String, Accumulated>()
 
         for (detail in plannedMealDetails) {
-            val scale = if (detail.recipe.servings != 0) {
-                detail.plannedMeal.servings / detail.recipe.servings
-            } else {
-                detail.plannedMeal.servings
+            // Iterate through all recipes in this meal
+            for (recipeDetail in detail.recipes) {
+                val scale = if (recipeDetail.recipe.servings != 0) {
+                    recipeDetail.servings / recipeDetail.recipe.servings
+                } else {
+                    recipeDetail.servings
+                }
+
+                for (ingredient in recipeDetail.ingredients) {
+                    val normalizedName = ingredient.name.trim().lowercase()
+                    val normalizedUnit = ingredient.unit.trim().lowercase()
+                    if (normalizedName.isEmpty()) continue
+
+                    val key = "$normalizedName|$normalizedUnit"
+                    val scaledQuantity = ingredient.quantity * scale
+
+                    accumulator.getOrPut(key) {
+                        Accumulated(
+                            displayName = ingredient.name.trim(),
+                            unit = ingredient.unit.trim(),
+                            totalQuantity = 0.0,
+                            sourceRecipeNames = mutableSetOf()
+                        )
+                    }.apply {
+                        totalQuantity += scaledQuantity
+                        sourceRecipeNames.add(recipeDetail.recipe.name)
+                    }
+                }
             }
 
-            for (ingredient in detail.ingredients) {
-                val normalizedName = ingredient.name.trim().lowercase()
-                val normalizedUnit = ingredient.unit.trim().lowercase()
+            // Also add standalone meal ingredients
+            for (mealIngredient in detail.mealIngredients) {
+                val normalizedName = mealIngredient.name.trim().lowercase()
+                val normalizedUnit = mealIngredient.unit.trim().lowercase()
                 if (normalizedName.isEmpty()) continue
 
                 val key = "$normalizedName|$normalizedUnit"
-                val scaledQuantity = ingredient.quantity * scale
 
                 accumulator.getOrPut(key) {
                     Accumulated(
-                        displayName = ingredient.name.trim(),
-                        unit = ingredient.unit.trim(),
+                        displayName = mealIngredient.name.trim(),
+                        unit = mealIngredient.unit.trim(),
                         totalQuantity = 0.0,
                         sourceRecipeNames = mutableSetOf()
                     )
                 }.apply {
-                    totalQuantity += scaledQuantity
-                    sourceRecipeNames.add(detail.recipe.name)
+                    totalQuantity += mealIngredient.quantity
+                    sourceRecipeNames.add("Direct ingredient")
                 }
             }
         }

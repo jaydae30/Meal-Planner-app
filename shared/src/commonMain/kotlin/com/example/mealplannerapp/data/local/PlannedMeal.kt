@@ -7,21 +7,11 @@ import androidx.room3.PrimaryKey
 
 @Entity(
     tableName = "planned_meals",
-    foreignKeys = [
-        ForeignKey(
-            entity = Recipe::class,
-            parentColumns = ["id"],
-            childColumns = ["recipeId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [Index("recipeId"), Index("dateEpochDay")]
+    indices = [Index("dateEpochDay")]
 )
 data class PlannedMeal(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val dateEpochDay: Long,
-    val mealSlot: MealSlot,
-    val recipeId: Long,
-    val servings: Double
+    val mealSlot: MealSlot
 )

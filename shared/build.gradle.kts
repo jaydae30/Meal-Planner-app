@@ -29,15 +29,18 @@ kotlin {
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "shared"
-            isStatic = true
+            isStatic = false
+            export(compose.runtime)
+            export(compose.foundation)
+            export(compose.material3)
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
+            api(compose.runtime)
+            api(compose.foundation)
+            api(compose.material3)
             implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.uiToolingPreview)
@@ -87,4 +90,11 @@ dependencies {
     add("kspAndroid", libs.androidx.room.compiler)
     add("kspIosArm64", libs.androidx.room.compiler)
     add("kspIosSimulatorArm64", libs.androidx.room.compiler)
+}
+
+// Fix for Compose resources sync task issue on iOS
+tasks.configureEach {
+    if (name == "syncComposeResourcesForIos") {
+        enabled = false
+    }
 }

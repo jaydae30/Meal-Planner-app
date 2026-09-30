@@ -22,7 +22,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,6 +48,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mealplannerapp.data.local.IngredientNutrition
 import com.example.mealplannerapp.di.LocalAppContainer
+
+// Predefined units for ingredients
+private val INGREDIENT_UNITS = listOf(
+    "g",           // grams
+    "oz",          // ounces
+    "lb",          // pounds
+    "kg",          // kilograms
+    "ml",          // milliliters
+    "cup",         // cups
+    "tbsp",        // tablespoons
+    "tsp",         // teaspoons
+    "item"         // per item (e.g., biscuit, egg)
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,6 +168,7 @@ private fun IngredientNutritionEditDialog(
     var name by remember { mutableStateOf(existing?.name ?: "") }
     var servingQuantity by remember { mutableStateOf(existing?.servingQuantity?.formatNumber() ?: "100") }
     var servingUnit by remember { mutableStateOf(existing?.servingUnit ?: "g") }
+    var unitDropdownExpanded by remember { mutableStateOf(false) }
     var calories by remember { mutableStateOf(existing?.caloriesPerServing?.formatNumber() ?: "0") }
     var protein by remember { mutableStateOf(existing?.proteinGramsPerServing?.formatNumber() ?: "0") }
     var carbs by remember { mutableStateOf(existing?.carbsGramsPerServing?.formatNumber() ?: "0") }
@@ -178,12 +195,34 @@ private fun IngredientNutritionEditDialog(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
-                    OutlinedTextField(
-                        value = servingUnit,
-                        onValueChange = { servingUnit = it },
-                        label = { Text("Unit") },
+                    ExposedDropdownMenuBox(
+                        expanded = unitDropdownExpanded,
+                        onExpandedChange = { unitDropdownExpanded = it },
                         modifier = Modifier.weight(1f)
-                    )
+                    ) {
+                        OutlinedTextField(
+                            value = servingUnit,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Unit") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitDropdownExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = unitDropdownExpanded,
+                            onDismissRequest = { unitDropdownExpanded = false }
+                        ) {
+                            INGREDIENT_UNITS.forEach { unit ->
+                                DropdownMenuItem(
+                                    text = { Text(unit) },
+                                    onClick = {
+                                        servingUnit = unit
+                                        unitDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth()) {

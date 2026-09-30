@@ -11,9 +11,9 @@ import kotlinx.coroutines.Dispatchers
 @Database(
     entities = [
         Recipe::class, Ingredient::class, PlannedMeal::class, UserSettings::class,
-        IngredientNutrition::class
+        IngredientNutrition::class, PlannedMealRecipe::class, MealIngredient::class
     ],
-    version = 3,
+    version = 5,
     exportSchema = true
 )
 @ColumnTypeConverters(Converters::class)

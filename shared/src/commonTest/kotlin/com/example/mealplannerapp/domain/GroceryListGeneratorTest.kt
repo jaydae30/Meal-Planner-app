@@ -5,6 +5,7 @@ import com.example.mealplannerapp.data.local.MealSlot
 import com.example.mealplannerapp.data.local.PlannedMeal
 import com.example.mealplannerapp.data.local.Recipe
 import com.example.mealplannerapp.data.repository.PlannedMealDetail
+import com.example.mealplannerapp.data.repository.RecipeDetail
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -20,11 +21,9 @@ class GroceryListGeneratorTest {
         fatGramsPerServing = 10.0
     )
 
-    private fun plannedMeal(recipeId: Long, servings: Double) = PlannedMeal(
+    private fun plannedMeal() = PlannedMeal(
         dateEpochDay = 0,
-        mealSlot = MealSlot.DINNER,
-        recipeId = recipeId,
-        servings = servings
+        mealSlot = MealSlot.DINNER
     )
 
     @Test
@@ -34,14 +33,24 @@ class GroceryListGeneratorTest {
 
         val details = listOf(
             PlannedMealDetail(
-                plannedMeal = plannedMeal(recipeId = 1, servings = 4.0),
-                recipe = chili,
-                ingredients = listOf(Ingredient(recipeId = 1, name = "Ground Beef", quantity = 1.0, unit = "lb"))
+                plannedMeal = plannedMeal(),
+                recipes = listOf(
+                    RecipeDetail(
+                        recipe = chili,
+                        ingredients = listOf(Ingredient(recipeId = 1, name = "Ground Beef", quantity = 1.0, unit = "lb")),
+                        servings = 4.0
+                    )
+                )
             ),
             PlannedMealDetail(
-                plannedMeal = plannedMeal(recipeId = 2, servings = 2.0),
-                recipe = tacos,
-                ingredients = listOf(Ingredient(recipeId = 2, name = "ground beef", quantity = 0.5, unit = "LB"))
+                plannedMeal = plannedMeal(),
+                recipes = listOf(
+                    RecipeDetail(
+                        recipe = tacos,
+                        ingredients = listOf(Ingredient(recipeId = 2, name = "ground beef", quantity = 0.5, unit = "LB")),
+                        servings = 2.0
+                    )
+                )
             )
         )
 
@@ -57,9 +66,14 @@ class GroceryListGeneratorTest {
         val recipe = recipe(id = 1, name = "Soup", servings = 4)
         val details = listOf(
             PlannedMealDetail(
-                plannedMeal = plannedMeal(recipeId = 1, servings = 2.0),
-                recipe = recipe,
-                ingredients = listOf(Ingredient(recipeId = 1, name = "Carrot", quantity = 4.0, unit = "cup"))
+                plannedMeal = plannedMeal(),
+                recipes = listOf(
+                    RecipeDetail(
+                        recipe = recipe,
+                        ingredients = listOf(Ingredient(recipeId = 1, name = "Carrot", quantity = 4.0, unit = "cup")),
+                        servings = 2.0
+                    )
+                )
             )
         )
 
@@ -73,11 +87,16 @@ class GroceryListGeneratorTest {
         val recipe = recipe(id = 1, name = "Bread", servings = 1)
         val details = listOf(
             PlannedMealDetail(
-                plannedMeal = plannedMeal(recipeId = 1, servings = 1.0),
-                recipe = recipe,
-                ingredients = listOf(
-                    Ingredient(recipeId = 1, name = "Flour", quantity = 2.0, unit = "cup"),
-                    Ingredient(recipeId = 1, name = "Flour", quantity = 500.0, unit = "g")
+                plannedMeal = plannedMeal(),
+                recipes = listOf(
+                    RecipeDetail(
+                        recipe = recipe,
+                        ingredients = listOf(
+                            Ingredient(recipeId = 1, name = "Flour", quantity = 2.0, unit = "cup"),
+                            Ingredient(recipeId = 1, name = "Flour", quantity = 500.0, unit = "g")
+                        ),
+                        servings = 1.0
+                    )
                 )
             )
         )

@@ -4,6 +4,7 @@ import com.example.mealplannerapp.data.local.MealSlot
 import com.example.mealplannerapp.data.local.PlannedMeal
 import com.example.mealplannerapp.data.local.Recipe
 import com.example.mealplannerapp.data.repository.PlannedMealDetail
+import com.example.mealplannerapp.data.repository.RecipeDetail
 import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,12 +30,15 @@ class NutritionCalculatorTest {
             PlannedMealDetail(
                 plannedMeal = PlannedMeal(
                     dateEpochDay = monday.toEpochDays(),
-                    mealSlot = MealSlot.BREAKFAST,
-                    recipeId = 1,
-                    servings = 2.0
+                    mealSlot = MealSlot.BREAKFAST
                 ),
-                recipe = recipe,
-                ingredients = emptyList()
+                recipes = listOf(
+                    RecipeDetail(
+                        recipe = recipe,
+                        ingredients = emptyList(),
+                        servings = 2.0
+                    )
+                )
             )
         )
 

@@ -44,7 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mealplannerapp.data.local.MealSlot
-import com.example.mealplannerapp.data.local.PlannedMealWithRecipe
+import com.example.mealplannerapp.data.local.PlannedMealWithRecipeServings
 import com.example.mealplannerapp.di.LocalAppContainer
 import com.example.mealplannerapp.domain.datesUntilInclusive
 import kotlinx.datetime.DateTimeUnit
@@ -57,12 +57,18 @@ import kotlin.math.roundToInt
 fun PlannerScreen() {
     val container = LocalAppContainer.current
     val viewModel: PlannerViewModel = viewModel {
-        PlannerViewModel(container.mealPlanRepository, container.recipeRepository, container.settingsRepository)
+        PlannerViewModel(
+            container.mealPlanRepository,
+            container.recipeRepository,
+            container.settingsRepository,
+            container.ingredientNutritionRepository
+        )
     }
 
     val weekStart by viewModel.selectedWeekStart.collectAsState()
     val plannedMeals by viewModel.plannedMeals.collectAsState()
     val recipes by viewModel.recipes.collectAsState()
+    val storedIngredients by viewModel.storedIngredients.collectAsState()
     val dailyGoal by viewModel.dailyCalorieGoal.collectAsState()
 
     var pickerTarget by remember { mutableStateOf<Pair<LocalDate, MealSlot>?>(null) }
@@ -105,9 +111,14 @@ fun PlannerScreen() {
     pickerTarget?.let { (date, slot) ->
         RecipePickerSheet(
             recipes = recipes,
+            storedIngredients = storedIngredients,
             onDismiss = { pickerTarget = null },
             onConfirm = { recipe, servings ->
                 viewModel.addMeal(date, slot, recipe.id, servings)
+                pickerTarget = null
+            },
+            onConfirmIngredient = { ingredient, quantity ->
+                viewModel.addStoredIngredient(date, slot, ingredient, quantity)
                 pickerTarget = null
             }
         )
@@ -220,12 +231,12 @@ private fun WeekHeader(
 @Composable
 private fun DayCard(
     date: LocalDate,
-    mealsForDay: List<PlannedMealWithRecipe>,
+    mealsForDay: List<PlannedMealWithRecipeServings>,
     dailyGoal: Double,
     onAddMeal: (MealSlot) -> Unit,
-    onRemoveMeal: (PlannedMealWithRecipe) -> Unit
+    onRemoveMeal: (PlannedMealWithRecipeServings) -> Unit
 ) {
-    val dayTotalCalories = mealsForDay.sumOf { it.calories }
+    val dayTotalCalories = mealsForDay.sumOf { it.totalCalories }
     val overGoal = dayTotalCalories > dailyGoal
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -262,19 +273,58 @@ private fun DayCard(
                         modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
                     )
                 } else {
-                    mealsInSlot.forEach { entry ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "${entry.recipe.name} (${entry.plannedMeal.servings.formatServings()} servings) · " +
-                                    "${entry.calories.roundToInt()} kcal",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            IconButton(onClick = { onRemoveMeal(entry) }) {
-                                Icon(Icons.Filled.Close, contentDescription = "Remove")
+                    mealsInSlot.forEach { mealEntry ->
+                        // Show meal with all its recipes
+                        Column(modifier = Modifier.fillMaxWidth().padding(start = 8.dp, bottom = 4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            ) {
+                                val totalItems = mealEntry.recipeServings.size + mealEntry.mealIngredients.size
+                                if (totalItems == 1 && mealEntry.recipeServings.size == 1) {
+                                    // Single recipe meal - display inline as before
+                                    val recipeServing = mealEntry.recipeServings.first()
+                                    Text(
+                                        "${recipeServing.recipe.name} (${recipeServing.servings.formatServings()} servings) · " +
+                                            "${mealEntry.totalCalories.roundToInt()} kcal",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                } else if (totalItems == 1 && mealEntry.mealIngredients.size == 1) {
+                                    // Single ingredient - display inline
+                                    val ingredient = mealEntry.mealIngredients.first()
+                                    Text(
+                                        "${ingredient.name} (${ingredient.quantity.formatServings()} ${ingredient.unit}) · " +
+                                            "${mealEntry.totalCalories.roundToInt()} kcal",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                } else {
+                                    // Multiple items - show summary
+                                    Text(
+                                        "$totalItems items · ${mealEntry.totalCalories.roundToInt()} kcal",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                                IconButton(onClick = { onRemoveMeal(mealEntry) }) {
+                                    Icon(Icons.Filled.Close, contentDescription = "Remove")
+                                }
+                            }
+                            // For multiple items, show each on a separate line
+                            if ((mealEntry.recipeServings.size + mealEntry.mealIngredients.size) > 1) {
+                                mealEntry.recipeServings.forEach { recipeServing ->
+                                    Text(
+                                        "  • ${recipeServing.recipe.name} (${recipeServing.servings.formatServings()} servings)",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                                mealEntry.mealIngredients.forEach { ingredient ->
+                                    Text(
+                                        "  • ${ingredient.name} (${ingredient.quantity.formatServings()} ${ingredient.unit})",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -284,8 +334,12 @@ private fun DayCard(
     }
 }
 
-private val PlannedMealWithRecipe.calories: Double
-    get() = plannedMeal.servings * recipe.caloriesPerServing
+private val PlannedMealWithRecipeServings.totalCalories: Double
+    get() {
+        val recipeCalories = recipeServings.sumOf { it.servings * it.recipe.caloriesPerServing }
+        val ingredientCalories = mealIngredients.sumOf { it.quantity * it.caloriesPerUnit }
+        return recipeCalories + ingredientCalories
+    }
 
 private fun Double.formatServings(): String =
     if (this == this.toLong().toDouble()) this.toLong().toString() else this.toString()
